@@ -1,0 +1,48 @@
+name: Web Scraper and Email Notification
+
+on:
+  schedule:
+    - cron: '0 */8 * * *' # 每隔8小时运行一次（0:00, 8:00, 16:00 UTC）
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  scrape-and-email:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 设置 Python 环境
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      # 安装依赖
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
+
+      # 运行爬虫脚本
+      - name: Run scraper
+        run: python scraper.py
+        env:
+          OUTPUT_FILE: result.txt
+
+      # 发送邮件
+      - name: Send email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.163.com # 163 邮箱 SMTP 服务器
+          server_port: 465 # 163 邮箱 SSL 端口
+          secure: true # 使用 SSL
+          username: ${{ secrets.MAIL_USERNAME }} # 邮箱用户名
+          password: ${{ secrets.MAIL_PASSWORD }} # 授权码
+          subject: Web Scraper Result
+          to: gugelwd@gmail.com # 目标邮箱
+          from: GitHub Actions <lwdpromax@163.com> # 发件人
+          body: file://result.txt # 邮件正文从文件读取
+          content_type: text/plain
